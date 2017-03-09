@@ -15,7 +15,9 @@ libraryDependencies ++= {
     "mysql" % "mysql-connector-java" % "5.1.25",
     "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
     "org.specs2"          %%  "specs2-core"   % "2.3.11" % "test",
-    "org.scalaj" %% "scalaj-http" % "2.3.0"
+    "org.scalaj" %% "scalaj-http" % "2.3.0",
+    "com.maxmind.geoip2" % "geoip2" % "2.8.1"
+
   )
 }
     

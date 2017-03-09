@@ -1,7 +1,6 @@
 package com.hm.app
 
-import akka.actor.{Props}
-
+import akka.actor.Props
 import com.hm.ServerServiceActor
 import akka.actor.ActorSystem
 import akka.util.Timeout
@@ -11,6 +10,8 @@ import spray.http.{HttpRequest, HttpResponse, Uri}
 import spray.can.Http
 import spray.http._
 import HttpMethods._
+import com.hm.connector.MysqlClient
+
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -23,9 +24,9 @@ object App extends App {
 
   val service=system.actorOf(Props[ServerServiceActor],"DistributedApp")
   implicit  val timeout=Timeout(5)
-  IO(Http) ! Http.Bind(service, "localhost", 8080)
-
-
+  IO(Http) ! Http.Bind(service, "localhost", 8083)
+  MysqlClient.insert("liveinstance",Map("interface"->"localhost","port"->"8080"))
+  MysqlClient.getConnection.commit()
 
 }
 
