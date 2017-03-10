@@ -10,7 +10,9 @@ import spray.http.{HttpRequest, HttpResponse, Uri}
 import spray.can.Http
 import spray.http._
 import HttpMethods._
+import com.hm.config.Configuration
 import com.hm.connector.MysqlClient
+import spray.json.{JsArray, JsFalse, JsNumber, JsObject, JsString, JsTrue, JsValue, JsonFormat}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -18,15 +20,15 @@ import scala.concurrent.Future
 /**
   * Created by hari on 17/2/17.
   */
-object App extends App {
+object App extends App with Configuration{
 
   implicit  val system=ActorSystem("on-spray-can")
 
   val service=system.actorOf(Props[ServerServiceActor],"DistributedApp")
   implicit  val timeout=Timeout(5)
-  IO(Http) ! Http.Bind(service, "localhost", 8083)
-  MysqlClient.insert("liveinstance",Map("interface"->"localhost","port"->"8080"))
-  MysqlClient.getConnection.commit()
+  IO(Http) ! Http.Bind(service, serviceHost, servicePort)
+  MysqlClient.insert("liveinstance",Map("interface"->serviceHost,"port"->servicePort))
+
 
 }
 

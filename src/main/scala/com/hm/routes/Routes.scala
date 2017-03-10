@@ -5,6 +5,9 @@ import spray.json._
 import java.lang.Exception
 import java.net.InetAddress
 import java.util
+
+import com.hm.config.Configuration
+
 import scala.collection.immutable.ListMap
 import com.hm.connector.MysqlClient
 import com.maxmind.geoip2.DatabaseReader
@@ -22,11 +25,11 @@ import scalaj.http.{Http, HttpRequest, HttpResponse}
 /**
   * Created by hari on 17/2/17.
   */
-trait Routes extends HttpService {
+trait Routes extends HttpService with Configuration{
 
 var map=new util.TreeMap[Int,Int]()
   var m=new util.TreeMap[Int,Int]()
-def getVal= {
+/*def getVal= {
 
   map = MysqlClient.deSerialiseObject(1)
   if (map == null) {
@@ -36,60 +39,120 @@ def getVal= {
     map.put(2, 3)
     map.put(1, 2)
   }
-}
+}*/
 
   val route =
 
-    path("")
-  {
+    path("") {
 
-val rs=MysqlClient.getLiveInstances
+      val rs = MysqlClient.getLiveInstances(serviceHost, servicePort)
 
-   // rs.map(i=>print(i._1+"  "+i._2))
-   /* val request: HttpRequest = Http("http://localhost:8080/add?e=56")
-    val response = request.asString.body
+      var host = ""
+      var port = ""
+      rs.foreach(i => {
+        host = i._1
+        port = i._2
+      })
+      println(host)
+      println(port)
+      if (!(host.equals("") && port.equals(""))) {
 
-    val tmp = response.parseJson.asInstanceOf[JsArray]
+        try {
 
 
-      //tmp.elements.foreach(i=>i.asInstanceOf[JsNumber].))
-      complete(tmp.prettyPrint)
-   func*/
+          val request: HttpRequest = Http("http://" + host + ":" + port + "/list")
+          val response = request.asString.body
 
-   complete("")
+          val tmp = response.parseJson.asInstanceOf[JsArray]
+          println("inside block" + tmp.elements.foreach(i => {
+            var k = i.asInstanceOf[JsObject].toString()
+            map.put(Integer.parseInt(k.substring(k.indexOf("{") + 2, k.indexOf(":") - 1)), Integer.parseInt(k.substring(k.indexOf(":") + 1, k.indexOf("}"))))
+            /* println(k.substring(k.indexOf(":")+1,k.indexOf("}")))
+         println(k.substring(k.indexOf("{")+2,k.indexOf(":")-1))
+         println(k)*/
+          }))
+
+          //tmp.elements.foreach(i=>i.asInstanceOf[JsNumber].))
+          complete("ii" + response)
+          // func
+        }
+        catch
+        {
+          case e:Exception=> {MysqlClient.delInstance(host,port)
+
+          }
+
+        }
+        finally
+        {
+
+        }
+    }
+   complete("io")
        // complete(JsArray(a.map(i=>JsNumber(i)).toVector).prettyPrint)
 
+  }~path("list")
+  {
+
+
+    complete(JsArray(
+      map.toVector.map(i=>JsObject(i._1+""->JsNumber(i._2)))
+    ).prettyPrint)
+    /*complete(""+map.map(i=>{
+      JsArray(JsNumber(i._1),JsNumber(i._2)).toString()
+    }))*/
   }~path("add") {
        parameter("e"){ (e)=>
-         getVal
+
          add(map,e.toInt)
+         val rs=MysqlClient.getInstances(serviceHost,servicePort)
+
+         rs.foreach(i=>{
+           val request: HttpRequest = Http("http://"+i._1+":"+i._2+"/badd?e="+e.toInt+"")
+           print(i._2)
+           println(request.asString.body+"broad")
+         })
 
 
-         if(MysqlClient.checkStatus(8083)) {
-           getVal
-           add(map,e.toInt)
 
-         }
-         MysqlClient.serialiseObject(map,8083)
+
          complete("add"+map)
        }
 
 
-    }~path("del"){
-      parameter("e"){ (e)=>
-        getVal
-        map.values().remove(e.toInt)
-        if(MysqlClient.checkStatus(8083)) {
-          getVal
-          map.values().remove(e.toInt)
+    }~path("badd")
+  {
+    parameter("e"){ (e)=>
 
-        }
-        MysqlClient.serialiseObject(map,8083)
+      add(map,e.toInt)
+
+
+
+
+      complete("add"+map)
+    }
+
+  }~path("bdel")
+  {
+    parameter("e"){ (e)=>
+
+      map.values().remove(e.toInt)
+
+      complete("del"+map)
+    }
+  }~path("del"){
+      parameter("e"){ (e)=>
+
+        map.values().remove(e.toInt)
+        val rs=MysqlClient.getInstances(serviceHost,servicePort)
+        rs.foreach(i=>{
+          val request: HttpRequest = Http("http://"+i._1+":"+i._2+"/bdel?e="+e.toInt+"")
+        })
         complete("del"+map)
       }
     }~path("test")
   {
-    getVal
+
     val q=ListMap(map.toSeq.sortWith(_._2 > _._2):_*)
     var max=0
     var min=0

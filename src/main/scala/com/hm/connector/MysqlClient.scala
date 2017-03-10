@@ -47,6 +47,7 @@ object MysqlClient {
     val statement = getConnection.createStatement()
     try
       statement.execute(query)
+
     finally statement.close()
   }
 
@@ -74,6 +75,7 @@ object MysqlClient {
       try {
 
         preparedStatement.executeUpdate()
+        MysqlClient.getConnection.commit()
         if (returnColumns.nonEmpty) {
           val gkSet = preparedStatement.getGeneratedKeys
           if (gkSet.next()) {
@@ -149,15 +151,30 @@ def deSerialiseObject(serializeId:Int):util.TreeMap[Int,Int]={
   pstmt.close()
   deSerializedObject.asInstanceOf[util.TreeMap[Int,Int]]
 }
-  def getLiveInstances:Array[(String,String)]={
-    val pstmt=getConnection.prepareStatement("select * from liveinstance")
+  def getLiveInstances(host:String,port:Int):Array[(String,String)]={
+    val pstmt=getConnection.prepareStatement(" select * from liveinstance where interface <> '"+host+"' or port <> "+port+" order by port limit 1")
     val rs=pstmt.executeQuery()
-    val buffer=new collection.mutable.ArrayBuffer[(String,String)]
+    val buffer=new util.TreeMap[String,String]
     while(rs.next())
       {
-        buffer.add((rs.getString("interface"),rs.getString("port")))
+        buffer.put(rs.getString("interface"),rs.getString("port"))
+
+        //buffer.add((rs.getString("interface"),rs.getString("port")))
       }
       buffer.toArray
+  }
+  def getInstances(host:String,port:Int):util.TreeMap[String,String]={
+    val pstmt=getConnection.prepareStatement(" select distinct interface,port from liveinstance where interface <> '"+host+"' or port <> "+port+"")
+    val rs=pstmt.executeQuery()
+    val buffer=new util.TreeMap[String,String]
+    while(rs.next())
+    {
+      buffer.put(rs.getString("interface"),rs.getString("port"))
+      println(buffer)
+      println("hi")
+    }
+    println(buffer)
+    buffer
   }
   def checkStatus(p:Int):Boolean={
 
@@ -172,5 +189,16 @@ def deSerialiseObject(serializeId:Int):util.TreeMap[Int,Int]={
     rs.close()
     response
   }
+  def delInstance(host:String,port:String)={
+
+    val statement = getConnection.createStatement()
+    try {
+      statement.executeUpdate("delete from liveinstance where interface='" + host + "' and port=" + port)
+      MysqlClient.getConnection.commit()
+    }
+    finally statement.close()
+  }
+
+
 
 }
