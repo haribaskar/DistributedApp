@@ -152,29 +152,28 @@ def deSerialiseObject(serializeId:Int):util.TreeMap[Int,Int]={
   deSerializedObject.asInstanceOf[util.TreeMap[Int,Int]]
 }
   def getLiveInstances(host:String,port:Int):Array[(String,String)]={
-    val pstmt=getConnection.prepareStatement(" select * from liveinstance where interface <> '"+host+"' or port <> "+port+" order by port limit 1")
+    val pstmt=getConnection.prepareStatement(" select * from liveinstance where interface <> '"+host+"' or port <> "+port+" order by port limit 1 ")
     val rs=pstmt.executeQuery()
-    val buffer=new util.TreeMap[String,String]
+    val buffer=new collection.mutable.ArrayBuffer[(String,String)]
     while(rs.next())
       {
-        buffer.put(rs.getString("interface"),rs.getString("port"))
+        buffer.add((rs.getString("interface"),rs.getString("port")))
 
-        //buffer.add((rs.getString("interface"),rs.getString("port")))
+
       }
       buffer.toArray
   }
-  def getInstances(host:String,port:Int):util.TreeMap[String,String]={
+  def getInstances(host:String,port:Int):Array[(String,String)]={
     val pstmt=getConnection.prepareStatement(" select distinct interface,port from liveinstance where interface <> '"+host+"' or port <> "+port+"")
     val rs=pstmt.executeQuery()
-    val buffer=new util.TreeMap[String,String]
+    val buffer=new collection.mutable.ArrayBuffer[(String,String)]
     while(rs.next())
     {
-      buffer.put(rs.getString("interface"),rs.getString("port"))
-      println(buffer)
-      println("hi")
+      buffer.add((rs.getString("interface"),rs.getString("port")))
+
     }
-    println(buffer)
-    buffer
+
+    buffer.toArray
   }
   def checkStatus(p:Int):Boolean={
 

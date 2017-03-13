@@ -13,6 +13,12 @@ object Test {
   val database = new File("/home/hari/Downloads/GeoLite2-City.mmdb");
   def main(args: Array[String]): Unit = {
 
+    val rs = MysqlClient.getLiveInstances("localhost",8080)
+
+    println(rs.length)
+    rs.foreach(i => {
+     println(i._1+" "+i._2)
+    })
   }
   def func={
 
